@@ -1,0 +1,44 @@
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+function makeStorage(subfolder) {
+  const dir = path.join(__dirname, '..', 'uploads', subfolder);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  return multer.diskStorage({
+    destination: (req, file, cb) => cb(null, dir),
+    filename: (req, file, cb) => {
+      const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      cb(null, `${unique}${path.extname(file.originalname)}`);
+    },
+  });
+}
+
+const imageFileFilter = (req, file, cb) => {
+  const allowed = /jpeg|jpg|png|gif|webp/;
+  const ok = allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype);
+  if (ok) return cb(null, true);
+  cb(new Error('Only image files (jpg, jpeg, png, gif, webp) are allowed.'));
+};
+
+const bulkFileFilter = (req, file, cb) => {
+  const allowed = /csv|xlsx|xls/;
+  const ok = allowed.test(path.extname(file.originalname).toLowerCase());
+  if (ok) return cb(null, true);
+  cb(new Error('Only CSV or Excel (.xlsx, .xls) files are allowed.'));
+};
+
+const uploadProfilePicture = multer({
+  storage: makeStorage('profile'),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: imageFileFilter,
+});
+
+const uploadBulkFile = multer({
+  storage: makeStorage('bulk'),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: bulkFileFilter,
+});
+
+module.exports = { uploadProfilePicture, uploadBulkFile };

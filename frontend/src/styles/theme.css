@@ -1,0 +1,324 @@
+/* =========================================================
+   Design tokens - "Registrar's Office" theme
+   A paper-and-ledger aesthetic befitting an exams office:
+   deep collegiate navy, an aged brass/gold accent (not the
+   generic terracotta), warm paper background, and a mono
+   face for course codes/times to feel like a printed docket.
+   ========================================================= */
+:root {
+  --navy-950: #0B2545;
+  --navy-900: #123262;
+  --navy-800: #1B3E78;
+  --navy-100: #E7ECF6;
+
+  --gold-600: #A87C1F;
+  --gold-500: #C99A3E;
+  --gold-100: #F5E9CE;
+
+  --paper: #F7F5EF;
+  --paper-raised: #FFFFFF;
+  --ink: #1B2430;
+  --ink-soft: #4A5568;
+  --line: #DCD5C4;
+
+  --success: #2E7D4F;
+  --success-bg: #E4F3E9;
+  --warning: #B4770E;
+  --warning-bg: #FBF0DC;
+  --danger: #B3382C;
+  --danger-bg: #FBE7E4;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius: 10px;
+  --shadow-card: 0 1px 2px rgba(11, 37, 69, 0.06), 0 4px 16px rgba(11, 37, 69, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  color: var(--navy-950);
+  margin: 0 0 0.4em;
+  letter-spacing: -0.01em;
+}
+
+a { color: var(--navy-800); }
+
+code, .mono { font-family: var(--font-mono); }
+
+button, input, select, textarea { font-family: inherit; font-size: 0.95rem; }
+
+:focus-visible {
+  outline: 2px solid var(--gold-600);
+  outline-offset: 2px;
+}
+
+/* ---------- Layout shell ---------- */
+.app-shell {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  min-height: 100vh;
+}
+@media (max-width: 860px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .sidebar.open { display: block; }
+}
+
+.sidebar {
+  background: var(--navy-950);
+  color: var(--navy-100);
+  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar .brand {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.sidebar .brand-sub {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-500);
+  margin-bottom: 28px;
+  display: block;
+}
+.sidebar nav a, .sidebar nav button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--navy-100);
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  margin-bottom: 2px;
+  cursor: pointer;
+}
+.sidebar nav a:hover, .sidebar nav button:hover { background: rgba(255,255,255,0.08); }
+.sidebar nav a.active { background: var(--gold-600); color: #fff; font-weight: 600; }
+
+.main-content { padding: 28px 32px 60px; max-width: 1200px; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Cards / surfaces ---------- */
+.card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+}
+
+.stat-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold-600);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.stat-card .stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+}
+.stat-card .stat-value {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  color: var(--navy-950);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+/* ---------- Signature element: the exam docket ---------- */
+.docket {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--navy-900);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 10px;
+  position: relative;
+}
+.docket::before {
+  content: "";
+  position: absolute;
+  left: -1px; top: 8px; bottom: 8px;
+  width: 3px;
+  background: repeating-linear-gradient(180deg, var(--gold-500) 0 4px, transparent 4px 8px);
+}
+.docket .docket-code {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--gold-600);
+  letter-spacing: 0.03em;
+}
+.docket .docket-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--navy-950);
+}
+.docket .docket-meta {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.docket .docket-time {
+  font-family: var(--font-mono);
+  text-align: right;
+  color: var(--navy-900);
+  font-size: 0.95rem;
+}
+.status-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.status-pill.draft { background: var(--warning-bg); color: var(--warning); }
+.status-pill.published { background: var(--success-bg); color: var(--success); }
+.status-pill.archived { background: #EEE; color: #666; }
+
+/* ---------- Forms ---------- */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--navy-950);
+  margin-bottom: 5px;
+}
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+.form-control:focus { outline: 2px solid var(--gold-600); outline-offset: 1px; border-color: var(--gold-600); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+.form-hint { font-size: 0.78rem; color: var(--ink-soft); margin-top: 4px; }
+.form-error { font-size: 0.78rem; color: var(--danger); margin-top: 4px; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-primary { background: var(--navy-950); color: #fff; }
+.btn-primary:hover { background: var(--navy-900); }
+.btn-gold { background: var(--gold-600); color: #fff; }
+.btn-gold:hover { background: var(--gold-500); }
+.btn-outline { background: transparent; border-color: var(--line); color: var(--navy-950); }
+.btn-outline:hover { background: var(--navy-100); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---------- Tables ---------- */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+table.data-table { width: 100%; border-collapse: collapse; background: var(--paper-raised); }
+table.data-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  background: var(--navy-100);
+  padding: 10px 14px;
+}
+table.data-table td { padding: 10px 14px; border-top: 1px solid var(--line); font-size: 0.88rem; }
+table.data-table tr:hover td { background: #FAF8F2; }
+
+/* ---------- Auth pages ---------- */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy-950);
+  padding: 24px;
+}
+.auth-card {
+  background: var(--paper-raised);
+  border-radius: 14px;
+  padding: 36px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+}
+.auth-card .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-600);
+}
+.auth-card h1 { font-size: 1.5rem; margin-top: 4px; }
+.auth-footer { text-align: center; margin-top: 18px; font-size: 0.85rem; color: var(--ink-soft); }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+.badge.active { background: var(--success-bg); color: var(--success); }
+.badge.inactive { background: var(--danger-bg); color: var(--danger); }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--ink-soft);
+}
+.empty-state h3 { color: var(--navy-950); }
+
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.toolbar .form-control { max-width: 260px; }
+
+.notif-item { padding: 12px; border-bottom: 1px solid var(--line); font-size: 0.85rem; }
+.notif-item.unread { background: var(--gold-100); }
