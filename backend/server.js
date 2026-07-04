@@ -20,6 +20,8 @@ const academicRoutes = require('./routes/academic.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const reportRoutes = require('./routes/report.routes');
 const uploadRoutes = require('./routes/upload.routes');
+const publicRoutes = require('./routes/public.routes');
+
 
 const app = express();
 
@@ -57,6 +59,8 @@ app.use('/api/academic', academicRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/public', publicRoutes);
+
 
 // --- 404 & error handling ---
 app.use(notFound);
