@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
+import { buildFileUrl } from '../utils/buildFileUrl';
 
 export default function Profile() {
+  const { setUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({ fullName: '', phone: '' });
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -15,7 +18,7 @@ export default function Profile() {
     });
   };
 
-  useEffect(() => { load(); }, []); 
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveProfile = async (e) => {
     e.preventDefault();
@@ -34,9 +37,14 @@ export default function Profile() {
     const data = new FormData();
     data.append('picture', file);
     try {
-      await api.post('/profile/picture', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await api.post('/profile/picture', data, { headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success('Profile picture updated.');
       load();
+      setUser((prev) => {
+        const updated = { ...prev, profile_picture: res.data.data.profilePicture };
+        localStorage.setItem('user', JSON.stringify(updated));
+        return updated;
+      });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Upload failed.');
     }
@@ -60,9 +68,40 @@ export default function Profile() {
       <div className="card" style={{ marginBottom: 20, maxWidth: 520 }}>
         <h3>Personal information</h3>
         <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>{profile.email} · {profile.role}</p>
-        <div className="form-group">
-          <label>Profile picture</label>
-          <input type="file" accept="image/*" onChange={uploadPicture} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+          {profile.profile_picture ? (
+            <img
+              src={buildFileUrl(profile.profile_picture)}
+              alt="Profile"
+              style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: '50%',
+                background: 'var(--navy-950)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.4rem',
+              }}
+            >
+              {profile.full_name
+                ?.split(' ')
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase()}
+            </div>
+          )}
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label>Profile picture</label>
+            <input type="file" accept="image/*" onChange={uploadPicture} />
+          </div>
         </div>
         <form onSubmit={saveProfile}>
           <div className="form-group">
