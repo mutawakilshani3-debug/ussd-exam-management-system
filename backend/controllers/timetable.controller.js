@@ -1,6 +1,8 @@
 const { pool } = require('../config/db');
 const logActivity = require('../utils/logActivity');
 const { notifyMany } = require('../utils/notify');
+const sendEmail = require('../utils/sendEmail');
+const sendSms = require('../utils/sendSms');
 
 const BASE_SELECT = `
   SELECT t.id, t.exam_date, t.exam_day, t.venue, t.start_time, t.end_time, t.status,
@@ -181,21 +183,43 @@ async function publish(req, res, next) {
     );
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Timetable entry not found.' });
 
-    await pool.query('UPDATE exam_timetable SET status = "published" WHERE id = ?', [req.params.id]);
+        await pool.query('UPDATE exam_timetable SET status = "published" WHERE id = ?', [req.params.id]);
 
     const entry = rows[0];
     const [students] = await pool.query(
-      'SELECT id FROM users WHERE role = "student" AND programme_id = ? AND level = ?',
+      'SELECT id, full_name, email, phone FROM users WHERE role = "student" AND programme_id = ? AND level = ?',
       [entry.programme_id, entry.level]
     );
+
+    const message = `${entry.code} - ${entry.name} has been scheduled on ${entry.exam_date} at ${entry.venue}, ${entry.start_time}-${entry.end_time}.`;
+
     await notifyMany(
       students.map((s) => s.id),
       'New exam timetable published',
-      `${entry.code} - ${entry.name} has been scheduled on ${entry.exam_date} at ${entry.venue}, ${entry.start_time}-${entry.end_time}.`
+      message
+    );
+
+    // Best-effort email + SMS delivery. Failures are logged but never block the publish action.
+    await Promise.all(
+      students.map(async (student) => {
+        await sendEmail({
+          to: student.email,
+          subject: 'New Exam Timetable Published',
+          html: `<p>Hello ${student.full_name},</p><p>${message}</p>`,
+        }).catch((err) => console.error(`Email failed for ${student.email}:`, err.message));
+
+        await sendSms(student.phone, `Exam Alert: ${message}`).catch((err) =>
+          console.error(`SMS failed for ${student.phone}:`, err.message)
+        );
+      })
     );
 
     await logActivity(req.user.id, 'PUBLISH_TIMETABLE', `Published timetable entry #${req.params.id}`, req);
-    res.json({ success: true, message: 'Timetable entry published and students notified.' });
+    res.json({
+      success: true,
+      message: `Timetable entry published. ${students.length} student(s) notified in-app, by email, and by SMS.`,
+    });
+
   } catch (err) {
     next(err);
   }
