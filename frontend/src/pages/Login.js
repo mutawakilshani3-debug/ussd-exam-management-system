@@ -60,14 +60,13 @@ export default function Login() {
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-        <div className="auth-footer">
-  Student? <Link to="/register">Create an account</Link>
-  <br />
-  <Link to="/check">Check exam details without signing in</Link>
-</div>
-
+                <div className="auth-footer">
+          Student? <Link to="/register">Create an account</Link>
+          <br />
+          <Link to="/check">Check exam details without signing in</Link>
         </div>
       </div>
     </div>
   );
 }
+
