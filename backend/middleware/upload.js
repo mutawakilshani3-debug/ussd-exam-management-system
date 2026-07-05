@@ -50,4 +50,5 @@ const uploadBulkFile = multer({
   fileFilter: bulkFileFilter,
 });
 
-module.exports = { uploadProfilePicture, uploadBulkFile };
+module.exports = { uploadProfilePicture, uploadProfilePictureToDb, uploadBulkFile };
+
