@@ -29,7 +29,7 @@ const bulkFileFilter = (req, file, cb) => {
   cb(new Error('Only CSV or Excel (.xlsx, .xls) files are allowed.'));
 };
 
-const const uploadProfilePicture = multer({
+const uploadProfilePicture = multer({
   storage: makeStorage('profile'),
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
   fileFilter: imageFileFilter,
