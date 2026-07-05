@@ -4,11 +4,52 @@ import api from '../api/axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 
+// Resizes and compresses an image in the browser before upload. This makes
+// uploads reliable across every device (some Android cameras produce much
+// larger files than iPhone's, which could exceed the server's size limit
+// before an error even had a chance to come back).
+function resizeImage(file, maxDim = 500, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height >= width && height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject(new Error('Could not process that image.'));
+            resolve(blob);
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = () => reject(new Error('Could not read that image file.'));
+      img.src = event.target.result;
+    };
+    reader.onerror = () => reject(new Error('Could not read that file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function Profile() {
   const { setUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({ fullName: '', phone: '' });
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [uploading, setUploading] = useState(false);
 
   const load = () => {
     api.get('/profile').then((res) => {
@@ -32,10 +73,18 @@ export default function Profile() {
 
   const uploadPicture = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-    const data = new FormData();
-    data.append('picture', file);
+    e.target.value = ''; // allow re-selecting the same file again later
+    if (!file) {
+      toast.error('No file was selected. Please try picking the photo again.');
+      return;
+    }
+
+    setUploading(true);
     try {
+      const compressed = await resizeImage(file);
+      const data = new FormData();
+      data.append('picture', compressed, 'profile.jpg');
+
       const res = await api.post('/profile/picture', data, { headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success('Profile picture updated.');
       load();
@@ -45,7 +94,9 @@ export default function Profile() {
         return updated;
       });
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Upload failed.');
+      toast.error(err.response?.data?.message || err.message || 'Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -99,7 +150,8 @@ export default function Profile() {
           )}
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label>Profile picture</label>
-            <input type="file" accept="image/*" onChange={uploadPicture} />
+            <input type="file" accept="image/*" onChange={uploadPicture} disabled={uploading} />
+            {uploading && <div className="form-hint">Uploading...</div>}
           </div>
         </div>
         <form onSubmit={saveProfile}>
