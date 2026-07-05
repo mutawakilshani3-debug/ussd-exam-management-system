@@ -35,11 +35,12 @@ async function uploadPicture(req, res, next) {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
 
-    const relativePath = `/uploads/profile/${req.file.filename}`;
-    await pool.query('UPDATE users SET profile_picture = ? WHERE id = ?', [relativePath, req.user.id]);
+    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+    await pool.query('UPDATE users SET profile_picture = ? WHERE id = ?', [dataUri, req.user.id]);
     await logActivity(req.user.id, 'UPLOAD_PROFILE_PICTURE', null, req);
 
-    res.json({ success: true, message: 'Profile picture updated.', data: { profilePicture: relativePath } });
+    res.json({ success: true, message: 'Profile picture updated.', data: { profilePicture: dataUri } });
   } catch (err) {
     next(err);
   }
