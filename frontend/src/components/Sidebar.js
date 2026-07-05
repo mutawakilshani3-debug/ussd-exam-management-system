@@ -8,7 +8,7 @@ const LINKS = {
     { to: '/admin/examiners', label: 'Examiners' },
     { to: '/admin/invigilators', label: 'Invigilators' },
     { to: '/admin/courses', label: 'Courses' },
-    { to: '/admin/academic', label: 'Academic Strure' },
+    { to: '/admin/academic', label: 'Academic Structure' },
     { to: '/admin/timetable', label: 'Timetable' },
     { to: '/admin/bulk-upload', label: 'Bulk Upload' },
     { to: '/admin/reports', label: 'Reports' },
