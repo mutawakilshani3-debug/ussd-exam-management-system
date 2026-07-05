@@ -3,7 +3,6 @@ import DashboardLayout from '../components/DashboardLayout';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
-import { buildFileUrl } from '../utils/buildFileUrl';
 
 export default function Profile() {
   const { setUser } = useAuth();
@@ -71,7 +70,7 @@ export default function Profile() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
           {profile.profile_picture ? (
             <img
-              src={buildFileUrl(profile.profile_picture)}
+              src={profile.profile_picture}
               alt="Profile"
               style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }}
             />
