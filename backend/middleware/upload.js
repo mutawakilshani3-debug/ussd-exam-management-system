@@ -29,9 +29,18 @@ const bulkFileFilter = (req, file, cb) => {
   cb(new Error('Only CSV or Excel (.xlsx, .xls) files are allowed.'));
 };
 
-const uploadProfilePicture = multer({
+const const uploadProfilePicture = multer({
   storage: makeStorage('profile'),
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: imageFileFilter,
+});
+
+// Profile pictures are stored as base64 directly in the database (not on disk),
+// so they survive redeploys on hosts with ephemeral filesystems like Render's
+// free tier. Kept at 1MB to stay well under typical hosted-MySQL packet limits.
+const uploadProfilePictureToDb = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 1 * 1024 * 1024 }, // 1MB
   fileFilter: imageFileFilter,
 });
 
