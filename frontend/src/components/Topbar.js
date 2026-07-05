@@ -1,9 +1,8 @@
 import { useAuth } from '../context/AuthContext';
-import { buildFileUrl } from '../utils/buildFileUrl';
 
 export default function Topbar({ title }) {
   const { user } = useAuth();
-  const avatarUrl = user?.profile_picture ? buildFileUrl(user.profile_picture) : null;
+  const avatarUrl = user?.profile_picture || null;
 
   return (
     <div className="topbar">
