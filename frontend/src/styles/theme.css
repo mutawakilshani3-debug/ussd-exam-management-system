@@ -296,6 +296,7 @@ table.data-table tr:hover td { background: #FAF8F2; }
   justify-content: center;
   background: var(--navy-950);
   padding: 24px;
+  position: relative;
 }
 .auth-card {
   background: var(--paper-raised);
