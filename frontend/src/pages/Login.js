@@ -61,12 +61,15 @@ export default function Login() {
           </button>
         </form>
                 <div className="auth-footer">
-          Student? <Link to="/register">Create an account</Link>
-          <br />
-          <Link to="/check">Check exam details without signing in</Link>
-        </div>
-      </div>
-    </div>
-  );
+  Student? <Link to="/register">Create an account</Link>
+  <br />
+  <Link to="/check">Check exam details without signing in</Link>
+  <br />
+  <Link to="/timetable">View full exam timetable</Link>
+</div>
+</div>
+</div>
+</div>
+);
 }
 
