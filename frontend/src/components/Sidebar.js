@@ -10,6 +10,7 @@ const LINKS = {
     { to: '/admin/courses', label: 'Courses' },
     { to: '/admin/academic', label: 'Academic Structure' },
     { to: '/admin/timetable', label: 'Timetable' },
+    { to: '/admin/timetable-documents', label: 'Timetable Documents' },
     { to: '/admin/bulk-upload', label: 'Bulk Upload' },
     { to: '/admin/reports', label: 'Reports' },
   ],
