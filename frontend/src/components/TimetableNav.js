@@ -26,20 +26,12 @@ export default function TimetableNav() {
   };
 
   return (
-    <div
-      ref={ref}
-      style={{
-        position: 'absolute',
-        top: 20,
-        right: 20,
-        zIndex: 10,
-      }}
-    >
+    <div ref={ref} style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="btn btn-outline btn-sm"
-        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+        style={{ background: 'var(--paper-raised)' }}
       >
         Timetable ▾
       </button>
@@ -50,10 +42,10 @@ export default function TimetableNav() {
             position: 'absolute',
             top: '110%',
             right: 0,
-            background: '#fff',
-            border: '1px solid var(--border, #e2e2e2)',
+            background: 'var(--paper-raised)',
+            border: '1px solid var(--line)',
             borderRadius: 8,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            boxShadow: 'var(--shadow-card)',
             minWidth: 200,
             overflow: 'hidden',
           }}
@@ -72,9 +64,9 @@ export default function TimetableNav() {
                 background: 'none',
                 cursor: 'pointer',
                 fontSize: '0.85rem',
-                color: 'var(--ink, #0B2545)',
+                color: 'var(--ink)',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#f5f5f5')}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--navy-100)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
             >
               {c.label}
