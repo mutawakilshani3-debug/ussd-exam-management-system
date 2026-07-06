@@ -218,6 +218,19 @@ button, input, select, textarea { font-family: inherit; font-size: 0.95rem; }
   margin-bottom: 24px;
 }
 
+/* ---------- Academic structure grid ---------- */
+.academic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .academic-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Signature element: the exam docket ---------- */
 .docket {
   background: var(--paper-raised);
