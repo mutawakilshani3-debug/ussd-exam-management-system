@@ -46,4 +46,33 @@ async function checkByCourseCode(req, res, next) {
   }
 }
 
-module.exports = { checkByCourseCode };
+// GET /api/public/timetable?level=200&semester=1
+async function getAllPublished(req, res, next) {
+  try {
+    const { level, semester } = req.query;
+
+    let query = `
+      SELECT c.code AS course_code, c.name AS course_name, c.level, c.semester,
+             p.name AS programme_name,
+             t.exam_date, t.exam_day, t.venue, t.start_time, t.end_time
+      FROM exam_timetable t
+      JOIN courses c ON c.id = t.course_id
+      JOIN programmes p ON p.id = c.programme_id
+      WHERE t.status = 'published'
+    `;
+    const params = [];
+
+    if (level) { query += ' AND c.level = ?'; params.push(level); }
+    if (semester) { query += ' AND c.semester = ?'; params.push(semester); }
+
+    query += ' ORDER BY t.exam_date, t.start_time';
+
+    const [rows] = await pool.query(query, params);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { checkByCourseCode, getAllPublished };
+
