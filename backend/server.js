@@ -24,7 +24,7 @@ const publicRoutes = require('./routes/public.routes');
 
 
 const app = express();
-app.set('trust proxy', 1); 
+app.set('trust proxy', 1); // trust first proxy (Render)
 
 // --- Security & core middleware ---
 app.use(helmet());
