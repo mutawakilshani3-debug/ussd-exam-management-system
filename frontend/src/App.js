@@ -21,6 +21,7 @@ import Invigilators from './pages/admin/Invigilators';
 import Courses from './pages/admin/Courses';
 import AcademicStructure from './pages/admin/AcademicStrure';
 import AdminTimetable from './pages/admin/Timetable';
+import TimetableDocuments from './pages/admin/TimetableDocuments';
 import BulkUpload from './pages/admin/BulkUpload';
 import Reports from './pages/admin/Reports';
 
@@ -68,6 +69,7 @@ export default function App() {
           <Route path="/admin/courses" element={<ProtectedRoute roles={['admin']}><Courses /></ProtectedRoute>} />
           <Route path="/admin/academic" element={<ProtectedRoute roles={['admin']}><AcademicStructure /></ProtectedRoute>} />
           <Route path="/admin/timetable" element={<ProtectedRoute roles={['admin']}><AdminTimetable /></ProtectedRoute>} />
+          <Route path="/admin/timetable-documents" element={<ProtectedRoute roles={['admin']}><TimetableDocuments /></ProtectedRoute>} />
           <Route path="/admin/bulk-upload" element={<ProtectedRoute roles={['admin']}><BulkUpload /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute roles={['admin']}><Reports /></ProtectedRoute>} />
 
