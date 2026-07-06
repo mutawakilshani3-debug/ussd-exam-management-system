@@ -75,7 +75,9 @@ export default function CheckExam() {
           </div>
         )}
 
-        <div className="auth-footer"><Link to="/login">Back to sign in</Link></div>
+        <div className="auth-footer">
+          <Link to="/timetable">View full exam timetable</Link> · <Link to="/login">Back to sign in</Link>
+        </div>
       </div>
     </div>
   );
