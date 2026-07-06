@@ -29,6 +29,13 @@ const bulkFileFilter = (req, file, cb) => {
   cb(new Error('Only CSV or Excel (.xlsx, .xls) files are allowed.'));
 };
 
+const pdfFileFilter = (req, file, cb) => {
+  const allowed = /pdf/;
+  const ok = allowed.test(path.extname(file.originalname).toLowerCase()) && file.mimetype === 'application/pdf';
+  if (ok) return cb(null, true);
+  cb(new Error('Only PDF files are allowed.'));
+};
+
 const uploadProfilePicture = multer({
   storage: makeStorage('profile'),
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
@@ -50,5 +57,18 @@ const uploadBulkFile = multer({
   fileFilter: bulkFileFilter,
 });
 
-module.exports = { uploadProfilePicture, uploadProfilePictureToDb, uploadBulkFile };
+// Timetable PDFs (general / morning / afternoon) are stored as binary data
+// directly in the database, same reasoning as profile pictures above -
+// Render's free tier filesystem is ephemeral and files would be lost on redeploy.
+const uploadTimetablePdf = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: pdfFileFilter,
+});
 
+module.exports = {
+  uploadProfilePicture,
+  uploadProfilePictureToDb,
+  uploadBulkFile,
+  uploadTimetablePdf,
+};
