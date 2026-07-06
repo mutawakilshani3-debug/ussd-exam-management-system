@@ -46,7 +46,7 @@ export default function AdminDashboard() {
         <StatCard label="Today's Exams" value={totals.todaysExams} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+      <div className="dashboard-charts-grid">
         <div className="card">
           <h3>Students by Programme</h3>
           {charts.studentsByProgramme.length > 0
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+      <div className="dashboard-charts-grid">
         <div className="card">
           <h3>Invigilator Workload</h3>
           {charts.invigilatorWorkload.length > 0
