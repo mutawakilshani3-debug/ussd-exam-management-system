@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const CATEGORIES = [
-  { to: '/timetable', label: 'General Timetable' },
+  { to: '/timetable-documents/general', label: 'General Timetable' },
   { to: '/timetable-documents/morning', label: 'Morning Session' },
   { to: '/timetable-documents/afternoon', label: 'Afternoon Session' },
 ];
