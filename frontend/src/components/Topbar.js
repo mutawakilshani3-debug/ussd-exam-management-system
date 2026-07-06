@@ -1,12 +1,20 @@
 import { useAuth } from '../context/AuthContext';
 
-export default function Topbar({ title }) {
+export default function Topbar({ title, onMenuClick }) {
   const { user } = useAuth();
   const avatarUrl = user?.profile_picture || null;
 
   return (
     <div className="topbar">
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          type="button"
+          className="menu-toggle"
+          onClick={onMenuClick}
+          aria-label="Toggle menu"
+        >
+          ☰
+        </button>
         <h2 style={{ margin: 0 }}>{title}</h2>
       </div>
       {user && (
