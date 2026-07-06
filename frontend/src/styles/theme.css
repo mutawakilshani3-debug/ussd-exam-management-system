@@ -231,6 +231,20 @@ button, input, select, textarea { font-family: inherit; font-size: 0.95rem; }
   }
 }
 
+/* ---------- Dashboard charts grid ---------- */
+.dashboard-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Signature element: the exam docket ---------- */
 .docket {
   background: var(--paper-raised);
