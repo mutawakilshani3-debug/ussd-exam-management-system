@@ -30,7 +30,7 @@ const LINKS = {
   ],
 };
 
-export default function Sidebar({ open }) {
+export default function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,6 +46,8 @@ export default function Sidebar({ open }) {
 
   useEffect(() => {
     setMenuOpen(false);
+    if (onClose) onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   if (!user) return null;
