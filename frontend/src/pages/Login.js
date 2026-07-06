@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import TimetableNav from '../components/TimetableNav';
 
 const ROLE_HOME = { admin: '/admin', examiner: '/examiner', invigilator: '/invigilator', student: '/student' };
 
@@ -27,6 +28,7 @@ export default function Login() {
 
   return (
     <div className="auth-page">
+      <TimetableNav />
       <div className="auth-card">
         <span className="eyebrow">MUTA · Registrar</span>
         <h1>Sign in to your account</h1>
