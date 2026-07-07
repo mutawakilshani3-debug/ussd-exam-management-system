@@ -24,6 +24,7 @@ export function AuthProvider({ children }) {
       })
       .catch(() => {
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         setUser(null);
       })
@@ -33,6 +34,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', res.data.token);
+    localStorage.setItem('refreshToken', res.data.refreshToken);
     localStorage.setItem('user', JSON.stringify(res.data.user));
     setUser(res.data.user);
     return res.data.user;
@@ -41,6 +43,7 @@ export function AuthProvider({ children }) {
   const register = async (payload) => {
     const res = await api.post('/auth/register', payload);
     localStorage.setItem('token', res.data.token);
+    localStorage.setItem('refreshToken', res.data.refreshToken);
     localStorage.setItem('user', JSON.stringify(res.data.user));
     setUser(res.data.user);
     return res.data.user;
@@ -48,11 +51,13 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
+      const refreshToken = localStorage.getItem('refreshToken');
+      await api.post('/auth/logout', { refreshToken });
     } catch (e) {
       // ignore network errors on logout
     }
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     setUser(null);
   };
