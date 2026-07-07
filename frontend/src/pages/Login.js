@@ -49,7 +49,7 @@ export default function Login() {
     <div className="auth-page">
       <TimetableNav />
       <div className="auth-card">
-        <span className="eyebrow">MUTA · Registrar</span>
+        <span className="eyebrow">BRA MUTA GH </span>
         <h1>Sign in to your account</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
