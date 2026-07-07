@@ -1,20 +1,37 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { pool } = require('../config/db');
-const generateToken = require('../utils/generateToken');
+const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 const logActivity = require('../utils/logActivity');
 
 const PASSWORD_MIN_LENGTH = 8;
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function isStrongPassword(pw) {
-  // At least 8 chars, one uppercase, one lowercase, one number.
   return (
     pw.length >= PASSWORD_MIN_LENGTH &&
     /[A-Z]/.test(pw) &&
     /[a-z]/.test(pw) &&
     /[0-9]/.test(pw)
   );
+}
+
+function hashRefreshToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+async function issueRefreshToken(userId) {
+  const refreshToken = generateRefreshToken();
+  const tokenHash = hashRefreshToken(refreshToken);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+
+  await pool.query(
+    'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
+    [userId, tokenHash, expiresAt]
+  );
+
+  return refreshToken;
 }
 
 /**
@@ -56,12 +73,14 @@ async function register(req, res, next) {
 
     await logActivity(result.insertId, 'REGISTER', 'Student self-registered', req);
 
-    const token = generateToken(result.insertId, 'student');
+    const accessToken = generateAccessToken(result.insertId, 'student');
+    const refreshToken = await issueRefreshToken(result.insertId);
 
     res.status(201).json({
       success: true,
       message: 'Registration successful.',
-      token,
+      token: accessToken,
+      refreshToken,
       user: { id: result.insertId, fullName, email, role: 'student' },
     });
   } catch (err) {
@@ -95,12 +114,50 @@ async function login(req, res, next) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
-    const token = generateToken(user.id, user.role);
+    const accessToken = generateAccessToken(user.id, user.role);
+    const refreshToken = await issueRefreshToken(user.id);
     await logActivity(user.id, 'LOGIN', null, req);
 
     delete user.password;
 
-    res.json({ success: true, message: 'Login successful.', token, user });
+    res.json({ success: true, message: 'Login successful.', token: accessToken, refreshToken, user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * POST /api/auth/refresh
+ * Public endpoint - exchanges a valid refresh token for a new access token.
+ */
+async function refresh(req, res, next) {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, message: 'Refresh token required.' });
+    }
+
+    const tokenHash = hashRefreshToken(refreshToken);
+    const [rows] = await pool.query(
+      `SELECT * FROM refresh_tokens WHERE token_hash = ? AND revoked = 0 AND expires_at > NOW() LIMIT 1`,
+      [tokenHash]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired refresh token. Please log in again.' });
+    }
+
+    const [userRows] = await pool.query(
+      'SELECT id, role, is_active FROM users WHERE id = ? LIMIT 1',
+      [rows[0].user_id]
+    );
+
+    if (userRows.length === 0 || !userRows[0].is_active) {
+      return res.status(401).json({ success: false, message: 'Account unavailable. Please log in again.' });
+    }
+
+    const newAccessToken = generateAccessToken(userRows[0].id, userRows[0].role);
+    res.json({ success: true, token: newAccessToken });
   } catch (err) {
     next(err);
   }
@@ -108,11 +165,15 @@ async function login(req, res, next) {
 
 /**
  * POST /api/auth/logout
- * Stateless JWT - logout is handled client-side by discarding the token.
- * This endpoint exists mainly to record the activity log entry.
+ * Revokes the provided refresh token (if any) and logs the activity.
  */
 async function logout(req, res, next) {
   try {
+    const { refreshToken } = req.body;
+    if (refreshToken) {
+      const tokenHash = hashRefreshToken(refreshToken);
+      await pool.query('UPDATE refresh_tokens SET revoked = 1 WHERE token_hash = ?', [tokenHash]);
+    }
     await logActivity(req.user.id, 'LOGOUT', null, req);
     res.json({ success: true, message: 'Logged out successfully.' });
   } catch (err) {
@@ -128,7 +189,6 @@ async function forgotPassword(req, res, next) {
     const { email } = req.body;
     const [rows] = await pool.query('SELECT id, full_name FROM users WHERE email = ? LIMIT 1', [email]);
 
-    // Always respond the same way whether or not the email exists (avoid account enumeration).
     if (rows.length === 0) {
       return res.json({ success: true, message: 'If that email exists, a reset link has been sent.' });
     }
@@ -158,6 +218,7 @@ async function forgotPassword(req, res, next) {
 
 /**
  * POST /api/auth/reset-password/:token
+ * Also revokes all existing refresh tokens for the user, forcing re-login everywhere.
  */
 async function resetPassword(req, res, next) {
   try {
@@ -190,6 +251,7 @@ async function resetPassword(req, res, next) {
 
     await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashed, resetRecord.user_id]);
     await pool.query('UPDATE password_reset_tokens SET used = 1 WHERE id = ?', [resetRecord.id]);
+    await pool.query('UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?', [resetRecord.user_id]);
     await logActivity(resetRecord.user_id, 'PASSWORD_RESET', null, req);
 
     res.json({ success: true, message: 'Password has been reset. You can now log in.' });
@@ -200,7 +262,7 @@ async function resetPassword(req, res, next) {
 
 /**
  * PUT /api/auth/change-password
- * Requires authentication.
+ * Requires authentication. Also revokes all existing refresh tokens.
  */
 async function changePassword(req, res, next) {
   try {
@@ -224,6 +286,7 @@ async function changePassword(req, res, next) {
 
     const hashed = await bcrypt.hash(newPassword, 12);
     await pool.query('UPDATE users SET password = ?, must_change_password = 0 WHERE id = ?', [hashed, req.user.id]);
+    await pool.query('UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?', [req.user.id]);
     await logActivity(req.user.id, 'PASSWORD_CHANGED', null, req);
 
     res.json({ success: true, message: 'Password changed successfully.' });
@@ -247,4 +310,5 @@ module.exports = {
   resetPassword,
   changePassword,
   getMe,
+  refresh,
 };
