@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import PasswordInput from '../components/PasswordInput';
 
 export default function Register() {
   const { register } = useAuth();
@@ -48,11 +49,11 @@ export default function Register() {
           <div className="form-row">
             <div className="form-group">
               <label>Password</label>
-              <input type="password" className="form-control" required value={form.password} onChange={update('password')} />
+              <PasswordInput required value={form.password} onChange={update('password')} />
             </div>
             <div className="form-group">
               <label>Confirm password</label>
-              <input type="password" className="form-control" required value={form.confirmPassword} onChange={update('confirmPassword')} />
+              <PasswordInput required value={form.confirmPassword} onChange={update('confirmPassword')} />
             </div>
           </div>
           <div className="form-hint" style={{ marginBottom: 16 }}>
