@@ -12,6 +12,7 @@ const {
   resetPassword,
   changePassword,
   getMe,
+  refresh,
 } = require('../controllers/auth.controller');
 
 router.post(
@@ -34,6 +35,7 @@ router.post(
   login
 );
 
+router.post('/refresh', authLimiter, refresh);
 router.post('/logout', protect, logout);
 router.post('/forgot-password', authLimiter, [body('email').isEmail()], validate, forgotPassword);
 router.post('/reset-password/:token', authLimiter, resetPassword);
