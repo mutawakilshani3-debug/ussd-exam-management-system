@@ -21,6 +21,7 @@ const dashboardRoutes = require('./routes/dashboard.routes');
 const reportRoutes = require('./routes/report.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const publicRoutes = require('./routes/public.routes');
+const settingsRoutes = require('./routes/settings.routes');
 
 
 const app = express();
@@ -75,6 +76,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/settings', settingsRoutes);
 
 
 // --- 404 & error handling ---
