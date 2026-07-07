@@ -28,9 +28,23 @@ app.set('trust proxy', 1); // trust first proxy (Render)
 
 // --- Security & core middleware ---
 app.use(helmet());
+
+// Allowed origins - add any additional frontend URLs here (e.g. custom domain)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
