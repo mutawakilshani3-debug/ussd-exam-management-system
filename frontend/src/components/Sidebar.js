@@ -14,6 +14,7 @@ const LINKS = {
     { to: '/admin/timetable-documents', label: 'Timetable Documents' },
     { to: '/admin/bulk-upload', label: 'Bulk Upload' },
     { to: '/admin/reports', label: 'Reports' },
+    { to: '/admin/settings', label: 'Site Settings' },
   ],
   examiner: [
     { to: '/examiner', label: 'Dashboard', end: true },
