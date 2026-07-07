@@ -61,7 +61,7 @@ export default function TimetableDocumentView() {
         <span className="eyebrow">MUTA · {LABELS[category] || 'Timetable'}</span>
         <h1>{LABELS[category] || 'Timetable'}</h1>
         <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginTop: -8 }}>
-          No account needed — search by course code or view the full document.
+          No account needed search by course code or view the full document.
         </p>
 
         {checking && <p>Checking for uploaded document...</p>}
