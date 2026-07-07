@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
+import PasswordInput from '../components/PasswordInput';
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -31,11 +32,11 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>New password</label>
-            <input type="password" className="form-control" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            <PasswordInput required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </div>
           <div className="form-group">
             <label>Confirm new password</label>
-            <input type="password" className="form-control" required value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} />
+            <PasswordInput required value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} />
           </div>
           <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
             {loading ? 'Saving...' : 'Reset password'}
