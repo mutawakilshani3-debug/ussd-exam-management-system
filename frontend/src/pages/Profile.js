@@ -3,6 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import PasswordInput from '../components/PasswordInput';
 
 // Resizes and compresses an image in the browser before upload. This makes
 // uploads reliable across every device (some Android cameras produce much
@@ -172,16 +173,16 @@ export default function Profile() {
         <form onSubmit={changePassword}>
           <div className="form-group">
             <label>Current password</label>
-            <input type="password" className="form-control" required value={pwForm.currentPassword} onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })} />
+            <PasswordInput required value={pwForm.currentPassword} onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })} />
           </div>
           <div className="form-row">
             <div className="form-group">
               <label>New password</label>
-              <input type="password" className="form-control" required value={pwForm.newPassword} onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })} />
+              <PasswordInput required value={pwForm.newPassword} onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Confirm new password</label>
-              <input type="password" className="form-control" required value={pwForm.confirmPassword} onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })} />
+              <PasswordInput required value={pwForm.confirmPassword} onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })} />
             </div>
           </div>
           <button className="btn btn-gold">Update password</button>
