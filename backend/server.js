@@ -22,6 +22,7 @@ const reportRoutes = require('./routes/report.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const publicRoutes = require('./routes/public.routes');
 const settingsRoutes = require('./routes/settings.routes');
+const generalTimetableRoutes = require('./routes/generalTimetable.routes');
 
 
 const app = express();
@@ -77,6 +78,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/general-timetable', generalTimetableRoutes);
 
 
 // --- 404 & error handling ---
