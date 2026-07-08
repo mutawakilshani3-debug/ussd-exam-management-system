@@ -12,6 +12,7 @@ const LINKS = {
     { to: '/admin/academic', label: 'Academic Structure' },
     { to: '/admin/timetable', label: 'Timetable' },
     { to: '/admin/timetable-documents', label: 'Timetable Documents' },
+    { to: '/admin/general-timetable', label: 'General Timetable Manager' },
     { to: '/admin/bulk-upload', label: 'Bulk Upload' },
     { to: '/admin/reports', label: 'Reports' },
     { to: '/admin/settings', label: 'Site Settings' },
