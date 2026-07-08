@@ -11,6 +11,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import CheckExam from './pages/CheckExam';
 import PublicTimetable from './pages/PublicTimetable';
 import TimetableDocumentView from './pages/TimetableDocumentView';
+import GeneralTimetable from './pages/GeneralTimetable';
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/check" element={<CheckExam />} />
           <Route path="/timetable" element={<PublicTimetable />} />
           <Route path="/timetable-documents/:category" element={<TimetableDocumentView />} />
+          <Route path="/general-timetable" element={<GeneralTimetable />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
