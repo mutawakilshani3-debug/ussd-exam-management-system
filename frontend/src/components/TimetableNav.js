@@ -5,6 +5,7 @@ const CATEGORIES = [
   { to: '/timetable-documents/general', label: 'General Timetable' },
   { to: '/timetable-documents/morning', label: 'Morning Session' },
   { to: '/timetable-documents/afternoon', label: 'Afternoon Session' },
+  { to: '/general-timetable', label: 'Build My Timetable' },
 ];
 
 export default function TimetableNav() {
