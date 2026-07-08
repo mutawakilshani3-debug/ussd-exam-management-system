@@ -39,12 +39,12 @@ async function bulkImport(req, res, next) {
           `INSERT INTO general_timetable (course_code, day, start_time, end_time, venue, lecturer, academic_year, semester)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            r.course_code.trim().toUpperCase(),
+            r.course_code.trim().toUpperCase().slice(0, 30),
             r.day.trim(),
             r.start_time.trim(),
             r.end_time.trim(),
-            r.venue.trim(),
-            r.lecturer ? r.lecturer.trim() : null,
+            r.venue.trim().slice(0, 200),
+            r.lecturer ? r.lecturer.trim().slice(0, 500) : null,
             r.academic_year || '2025/2026',
             r.semester || 'Semester 2',
           ]
@@ -90,7 +90,16 @@ async function create(req, res, next) {
     const [result] = await pool.query(
       `INSERT INTO general_timetable (course_code, day, start_time, end_time, venue, lecturer, academic_year, semester)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [course_code.trim().toUpperCase(), day, start_time, end_time, venue, lecturer || null, academic_year || '2025/2026', semester || 'Semester 2']
+      [
+        course_code.trim().toUpperCase().slice(0, 30),
+        day,
+        start_time,
+        end_time,
+        venue.slice(0, 200),
+        lecturer ? lecturer.slice(0, 500) : null,
+        academic_year || '2025/2026',
+        semester || 'Semester 2',
+      ]
     );
     res.status(201).json({ success: true, id: result.insertId });
   } catch (err) {
@@ -108,7 +117,15 @@ async function update(req, res, next) {
     const { course_code, day, start_time, end_time, venue, lecturer } = req.body;
     await pool.query(
       `UPDATE general_timetable SET course_code = ?, day = ?, start_time = ?, end_time = ?, venue = ?, lecturer = ? WHERE id = ?`,
-      [course_code.trim().toUpperCase(), day, start_time, end_time, venue, lecturer || null, id]
+      [
+        course_code.trim().toUpperCase().slice(0, 30),
+        day,
+        start_time,
+        end_time,
+        venue.slice(0, 200),
+        lecturer ? lecturer.slice(0, 500) : null,
+        id,
+      ]
     );
     res.json({ success: true, message: 'Entry updated.' });
   } catch (err) {
@@ -219,7 +236,14 @@ async function uploadFile(req, res, next) {
         await conn.query(
           `INSERT INTO general_timetable (course_code, day, start_time, end_time, venue, lecturer)
            VALUES (?, ?, ?, ?, ?, ?)`,
-          [r.course_code.toUpperCase(), r.day, r.start_time, r.end_time, r.venue, r.lecturer || null]
+          [
+            r.course_code.toUpperCase().slice(0, 30),
+            r.day,
+            r.start_time,
+            r.end_time,
+            r.venue.slice(0, 200),
+            r.lecturer ? r.lecturer.slice(0, 500) : null,
+          ]
         );
       }
       await conn.commit();
