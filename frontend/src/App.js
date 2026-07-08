@@ -27,6 +27,7 @@ import TimetableDocuments from './pages/admin/TimetableDocuments';
 import BulkUpload from './pages/admin/BulkUpload';
 import Reports from './pages/admin/Reports';
 import SiteSettings from './pages/admin/SiteSettings';
+import GeneralTimetableManager from './pages/admin/GeneralTimetableManager';
 
 import ExaminerDashboard from './pages/examiner/ExaminerDashboard';
 import MyCourses from './pages/examiner/MyCourses';
@@ -78,6 +79,7 @@ export default function App() {
           <Route path="/admin/bulk-upload" element={<ProtectedRoute roles={['admin']}><BulkUpload /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute roles={['admin']}><Reports /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute roles={['admin']}><SiteSettings /></ProtectedRoute>} />
+          <Route path="/admin/general-timetable" element={<ProtectedRoute roles={['admin']}><GeneralTimetableManager /></ProtectedRoute>} />
 
           {/* Examiner */}
           <Route path="/examiner" element={<ProtectedRoute roles={['examiner']}><ExaminerDashboard /></ProtectedRoute>} />
