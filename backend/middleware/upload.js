@@ -36,6 +36,15 @@ const pdfFileFilter = (req, file, cb) => {
   cb(new Error('Only PDF files are allowed.'));
 };
 
+// Accepts CSV, Excel, or PDF - used for the general school timetable import,
+// which can arrive in any of these three formats.
+const generalTimetableFileFilter = (req, file, cb) => {
+  const allowed = /csv|xlsx|xls|pdf/;
+  const ok = allowed.test(path.extname(file.originalname).toLowerCase());
+  if (ok) return cb(null, true);
+  cb(new Error('Only CSV, Excel (.xlsx, .xls), or PDF files are allowed.'));
+};
+
 const uploadProfilePicture = multer({
   storage: makeStorage('profile'),
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
@@ -66,9 +75,18 @@ const uploadTimetablePdf = multer({
   fileFilter: pdfFileFilter,
 });
 
+// General school timetable import (CSV, Excel, or PDF) - kept in memory since
+// the file is parsed into DB rows immediately and never needs to persist on disk.
+const uploadGeneralTimetableFile = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: generalTimetableFileFilter,
+});
+
 module.exports = {
   uploadProfilePicture,
   uploadProfilePictureToDb,
   uploadBulkFile,
   uploadTimetablePdf,
+  uploadGeneralTimetableFile,
 };
