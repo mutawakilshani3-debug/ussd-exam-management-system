@@ -113,7 +113,7 @@ async function searchByIndex(req, res, next) {
     }
 
     const [rows] = await pool.query(
-      'SELECT index_no, surname, other_names, course_of_study, qualification, service_year FROM national_service_records WHERE index_no = ? LIMIT 1',
+      'SELECT index_no, surname, other_names, date_of_birth, course_of_study, qualification, service_year FROM national_service_records WHERE index_no = ? LIMIT 1',
       [indexNo.trim()]
     );
 
