@@ -108,37 +108,33 @@ async function parsePdf(buffer) {
 /**
  * Parses the National Service class list PDF.
  *
- * Approach: find every 11-digit index number ("20" + 9 digits) in the raw
- * text as a fixed anchor point, then treat everything between one index
- * number and the next as a single record. Within each record:
- *   - the date of birth (YYYY-MM-DD) marks where the name ends
- *   - the qualification is taken as the LAST occurrence of "DEGREE" or
- *     "DIPLOMA" in the remaining text (not the first) - this matters
- *     because some course names themselves start with the word "DIPLOMA"
- *     (e.g. "DIPLOMA IN INFORMATION TECHNOLOGY DIPLOMA"), and naively
- *     matching the first occurrence would misidentify the course name's
- *     own leading word as the qualification marker, corrupting that
- *     record and cascading errors into subsequent ones.
+ * Anchors on: (serial number digits)(11-digit index number) immediately
+ * followed by an UPPERCASE letter (the first letter of the surname). This
+ * is more reliable than matching "20" + 9 digits directly, because that
+ * pattern can misfire whenever the serial number itself happens to start
+ * with "20" (e.g. record #20, #200-209, #720...), which shifts the match
+ * and corrupts that record's fields including date of birth.
+ *
+ * Within each record: DOB (YYYY-MM-DD) marks where the name ends, and the
+ * qualification is the LAST occurrence of "DEGREE"/"DIPLOMA" (not the
+ * first), since some course names themselves start with "DIPLOMA".
  */
 async function parseNationalServicePdf(buffer) {
   const data = await pdfParse(buffer);
   const text = data.text.replace(/\r/g, ' ').replace(/\n/g, ' ');
 
-  const indexRe = /20\d{9}/g;
+  const startRe = /\d{1,4}(\d{11})(?=[A-Z])/g;
   const starts = [];
   let m;
-  while ((m = indexRe.exec(text)) !== null) {
-    starts.push(m.index);
+  while ((m = startRe.exec(text)) !== null) {
+    starts.push({ indexNo: m[1], afterPos: m.index + m[0].length });
   }
 
   const rows = [];
   for (let i = 0; i < starts.length; i++) {
-    const start = starts[i];
-    const end = i + 1 < starts.length ? starts[i + 1] : text.length;
-    const chunk = text.slice(start, end);
-
-    const indexNo = chunk.slice(0, 11);
-    const rest = chunk.slice(11);
+    const { indexNo, afterPos } = starts[i];
+    const end = i + 1 < starts.length ? starts[i + 1].afterPos - 15 : text.length;
+    const rest = text.slice(afterPos, Math.max(end, afterPos));
 
     const dobMatch = rest.match(/(\d{4}-\d{2}-\d{2})/);
     if (!dobMatch) continue;
