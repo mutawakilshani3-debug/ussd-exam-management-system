@@ -9,6 +9,8 @@ export default function NationalServiceManager() {
   const [file, setFile] = useState(null);
   const [replaceAll, setReplaceAll] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [debugText, setDebugText] = useState('');
+  const [debugging, setDebugging] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -46,6 +48,28 @@ export default function NationalServiceManager() {
       toast.error(err.response?.data?.message || 'Upload failed. Please check the file format.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDebugParse = async () => {
+    if (!file) {
+      toast.error('Please choose the PDF file first, then tap this button.');
+      return;
+    }
+    const data = new FormData();
+    data.append('file', file);
+
+    setDebugging(true);
+    setDebugText('');
+    try {
+      const res = await api.post('/national-service/debug-parse', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setDebugText(res.data.textSample);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Debug parse failed.');
+    } finally {
+      setDebugging(false);
     }
   };
 
@@ -90,10 +114,33 @@ export default function NationalServiceManager() {
               Replace all existing records with this file (use this for a fresh service year)
             </label>
           </div>
-          <button className="btn btn-primary" disabled={uploading}>
-            {uploading ? 'Uploading...' : 'Upload & Import'}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-primary" disabled={uploading}>
+              {uploading ? 'Uploading...' : 'Upload & Import'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={handleDebugParse}
+              disabled={debugging}
+            >
+              {debugging ? 'Checking...' : 'Debug: Show Raw PDF Text'}
+            </button>
+          </div>
         </form>
+
+        {debugText && (
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>Raw extracted text (first 3000 chars) — copy this to share:</p>
+            <textarea
+              readOnly
+              value={debugText}
+              rows={12}
+              style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.7rem' }}
+              onFocus={(e) => e.target.select()}
+            />
+          </div>
+        )}
       </div>
 
       <div className="card">
