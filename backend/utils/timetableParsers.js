@@ -48,8 +48,8 @@ async function parsePdf(buffer) {
   const rows = [];
   let currentDay = null;
   let currentVenue = null;
-  let pendingCourse = null; // { course_code }
-  let pendingTimeRange = null; // { start_time, end_time }
+  let pendingCourse = null;
+  let pendingTimeRange = null;
 
   const flushPending = (lecturerLines) => {
     if (pendingCourse && pendingTimeRange && currentDay && currentVenue) {
@@ -71,7 +71,6 @@ async function parsePdf(buffer) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Day header
     if (DAYS.includes(line)) {
       flushPending(lecturerBuffer);
       lecturerBuffer = [];
@@ -80,20 +79,17 @@ async function parsePdf(buffer) {
       continue;
     }
 
-    // Room capacity/coordinate line marks that the PREVIOUS line was a room name
     if (ROOM_META_RE.test(line)) {
       flushPending(lecturerBuffer);
       lecturerBuffer = [];
-      currentVenue = lines[i - 1]; // the line right before this one is the room name
+      currentVenue = lines[i - 1];
       continue;
     }
 
-    // Skip the hourly time ruler line
     if (/^7:00 am/.test(line) || line.includes('noon')) {
       continue;
     }
 
-    // Course code + section line, e.g. "ESD 106 Lec 2"
     const courseMatch = line.match(COURSE_CODE_RE);
     if (courseMatch) {
       flushPending(lecturerBuffer);
@@ -102,14 +98,12 @@ async function parsePdf(buffer) {
       continue;
     }
 
-    // Time range line, e.g. "7:00a - 9:00a"
     if (TIME_RANGE_RE.test(line)) {
       const [, start, end] = line.match(TIME_RANGE_RE);
       pendingTimeRange = { start, end };
       continue;
     }
 
-    // Anything else while we have a pending course = lecturer name(s)
     if (pendingCourse) {
       lecturerBuffer.push(line);
     }
@@ -120,35 +114,41 @@ async function parsePdf(buffer) {
 }
 
 /**
- * Parses the National Service class list PDF (S/N, Index No, Surname,
- * Other Names, DOB, Course of Study, Qualification).
- *
- * Rather than relying on line breaks (which vary depending on how the PDF's
- * table columns get extracted), this collapses the whole document into one
- * continuous string and scans for records using a global pattern. Each
- * record is anchored by a serial number, a 9-12 digit index number, a date
- * of birth (YYYY-MM-DD), and a trailing DEGREE/DIPLOMA marker - so matches
- * stay correctly bounded even if page headers or stray line breaks appear
- * in between records.
+ * Parses the National Service class list PDF. Each record sits on its own
+ * line but columns are concatenated with NO separating spaces in some spots
+ * (e.g. "AMOAKOJESSICA 1998-02-11" or "TIZAAMIME1999-12-11"), so instead of
+ * splitting on whitespace this anchors on two reliable fixed patterns: an
+ * 11-digit index number starting with "20" (the admission year prefix), and
+ * a YYYY-MM-DD date of birth. Everything between them is treated as one
+ * combined name field (surname + other names), since there's no reliable
+ * separator between the two in the raw extracted text.
  */
 async function parseNationalServicePdf(buffer) {
   const data = await pdfParse(buffer);
-  const text = data.text
-    .replace(/\r/g, ' ')
-    .replace(/\n/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const lines = data.text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
 
-  const RECORD_RE = /(\d{1,4})\s+(\d{9,12})\s+(\S+)\s+(.+?)\s+(\d{4}-\d{2}-\d{2})\s+(.+?)\s+(DEGREE|DIPLOMA)/g;
+  const LINE_RE = /^(\d+?)(20\d{9})([A-Za-z][A-Za-z\-\s]*?)\s*(\d{4}-\d{2}-\d{2})\s*(.+?)\s*(DEGREE|DIPLOMA)\s*$/;
 
   const rows = [];
-  let match;
-  while ((match = RECORD_RE.exec(text)) !== null) {
-    const [, , indexNo, surname, otherNames, dob, course, qualification] = match;
+  for (const line of lines) {
+    const match = line.match(LINE_RE);
+    if (!match) continue;
+
+    const [, , indexNo, fullName, dob, course, qualification] = match;
+
+    // Best-effort split: surname is the leading all-caps word/run, the rest
+    // (which may include mixed case or additional words) is "other names".
+    const nameParts = fullName.trim().match(/^([A-Z\-]+)\s*(.*)$/);
+    const surname = nameParts ? nameParts[1] : fullName.trim();
+    const otherNames = nameParts ? nameParts[2].trim() : '';
+
     rows.push({
       index_no: indexNo,
-      surname,
-      other_names: otherNames.trim(),
+      surname: surname || fullName.trim(),
+      other_names: otherNames,
       date_of_birth: dob,
       course_of_study: course.trim(),
       qualification,
