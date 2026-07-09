@@ -119,4 +119,35 @@ async function parsePdf(buffer) {
   return rows;
 }
 
-module.exports = { parseSpreadsheet, parsePdf };
+/**
+ * Parses the National Service class list PDF (S/N, Index No, Surname,
+ * Other Names, DOB, Course of Study, Qualification - one record per line).
+ */
+async function parseNationalServicePdf(buffer) {
+  const data = await pdfParse(buffer);
+  const lines = data.text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const LINE_RE = /^(\d+)\s+(\d{9,12})\s+(\S+)\s+(.+?)\s+(\d{4}-\d{2}-\d{2})\s+(.+?)\s+(DEGREE|DIPLOMA)\s*$/;
+
+  const rows = [];
+  for (const line of lines) {
+    const match = line.match(LINE_RE);
+    if (match) {
+      const [, , indexNo, surname, otherNames, dob, course, qualification] = match;
+      rows.push({
+        index_no: indexNo,
+        surname,
+        other_names: otherNames.trim(),
+        date_of_birth: dob,
+        course_of_study: course.trim(),
+        qualification,
+      });
+    }
+  }
+  return rows;
+}
+
+module.exports = { parseSpreadsheet, parsePdf, parseNationalServicePdf };
