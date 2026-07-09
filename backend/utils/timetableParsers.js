@@ -121,31 +121,38 @@ async function parsePdf(buffer) {
 
 /**
  * Parses the National Service class list PDF (S/N, Index No, Surname,
- * Other Names, DOB, Course of Study, Qualification - one record per line).
+ * Other Names, DOB, Course of Study, Qualification).
+ *
+ * Rather than relying on line breaks (which vary depending on how the PDF's
+ * table columns get extracted), this collapses the whole document into one
+ * continuous string and scans for records using a global pattern. Each
+ * record is anchored by a serial number, a 9-12 digit index number, a date
+ * of birth (YYYY-MM-DD), and a trailing DEGREE/DIPLOMA marker - so matches
+ * stay correctly bounded even if page headers or stray line breaks appear
+ * in between records.
  */
 async function parseNationalServicePdf(buffer) {
   const data = await pdfParse(buffer);
-  const lines = data.text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const text = data.text
+    .replace(/\r/g, ' ')
+    .replace(/\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  const LINE_RE = /^(\d+)\s+(\d{9,12})\s+(\S+)\s+(.+?)\s+(\d{4}-\d{2}-\d{2})\s+(.+?)\s+(DEGREE|DIPLOMA)\s*$/;
+  const RECORD_RE = /(\d{1,4})\s+(\d{9,12})\s+(\S+)\s+(.+?)\s+(\d{4}-\d{2}-\d{2})\s+(.+?)\s+(DEGREE|DIPLOMA)/g;
 
   const rows = [];
-  for (const line of lines) {
-    const match = line.match(LINE_RE);
-    if (match) {
-      const [, , indexNo, surname, otherNames, dob, course, qualification] = match;
-      rows.push({
-        index_no: indexNo,
-        surname,
-        other_names: otherNames.trim(),
-        date_of_birth: dob,
-        course_of_study: course.trim(),
-        qualification,
-      });
-    }
+  let match;
+  while ((match = RECORD_RE.exec(text)) !== null) {
+    const [, , indexNo, surname, otherNames, dob, course, qualification] = match;
+    rows.push({
+      index_no: indexNo,
+      surname,
+      other_names: otherNames.trim(),
+      date_of_birth: dob,
+      course_of_study: course.trim(),
+      qualification,
+    });
   }
   return rows;
 }
