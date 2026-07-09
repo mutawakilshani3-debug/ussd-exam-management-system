@@ -13,6 +13,7 @@ const LINKS = {
     { to: '/admin/timetable', label: 'Timetable' },
     { to: '/admin/timetable-documents', label: 'Timetable Documents' },
     { to: '/admin/general-timetable', label: 'General Timetable Manager' },
+    { to: '/admin/national-service', label: 'National Service Records' },
     { to: '/admin/bulk-upload', label: 'Bulk Upload' },
     { to: '/admin/reports', label: 'Reports' },
     { to: '/admin/settings', label: 'Site Settings' },
