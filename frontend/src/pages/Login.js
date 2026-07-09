@@ -51,6 +51,26 @@ export default function Login() {
       <div className="auth-card">
         <span className="eyebrow">BRA MUTA GH </span>
         <h1>Sign in to your account</h1>
+
+        <Link
+          to="/national-service"
+          style={{
+            display: 'block',
+            textAlign: 'center',
+            fontWeight: 700,
+            fontSize: '1rem',
+            color: 'var(--gold-600)',
+            background: '#fff8e6',
+            border: '1px solid var(--gold-600)',
+            borderRadius: 8,
+            padding: '10px 12px',
+            marginBottom: 16,
+            textDecoration: 'none',
+          }}
+        >
+          Check your National Service details
+        </Link>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email address</label>
