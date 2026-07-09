@@ -108,69 +108,72 @@ async function parsePdf(buffer) {
 /**
  * Parses the National Service class list PDF.
  *
- * Anchors on: (serial number digits)(11-digit index number) immediately
- * followed by an UPPERCASE letter (the first letter of the surname). This
- * is more reliable than matching "20" + 9 digits directly, because that
- * pattern can misfire whenever the serial number itself happens to start
- * with "20" (e.g. record #20, #200-209, #720...), which shifts the match
- * and corrupts that record's fields including date of birth.
+ * Strategy: find record BOUNDARIES rather than record starts. Every
+ * qualification word ("DEGREE"/"DIPLOMA") that is immediately followed by
+ * the next record's leading digits (or sits at the very end of the
+ * document) marks the true end of a record. This correctly ignores
+ * "DIPLOMA" when it's merely the first word of a course name (e.g.
+ * "DIPLOMA IN INFORMATION TECHNOLOGY DIPLOMA") since that occurrence is
+ * followed by more letters, not digits.
  *
- * Within each record: DOB (YYYY-MM-DD) marks where the name ends, and the
- * qualification is the LAST occurrence of "DEGREE"/"DIPLOMA" (not the
- * first), since some course names themselves start with "DIPLOMA".
+ * Within each resulting chunk, the leading run of digits (serial number +
+ * 11-digit index number, concatenated with no separator in the raw
+ * extracted text) is located anywhere in the chunk - not anchored to the
+ * very start - so any stray page header/footer text glued onto the front
+ * of a record is simply discarded rather than causing the whole record to
+ * be skipped. The index number is always the LAST 11 digits of that run,
+ * which works regardless of how many digits the serial number itself has
+ * or what it starts with (avoiding the earlier bug where serials starting
+ * with "20" were confused for the index number's own prefix).
  */
 async function parseNationalServicePdf(buffer) {
   const data = await pdfParse(buffer);
-  const text = data.text.replace(/\r/g, ' ').replace(/\n/g, ' ');
+  let text = data.text.replace(/\r/g, ' ').replace(/\n/g, ' ');
+  text = text.replace(/\s+/g, ' ');
 
-  const startRe = /\d{1,4}(\d{11})(?=[A-Z])/g;
-  const starts = [];
-  let m;
-  while ((m = startRe.exec(text)) !== null) {
-    starts.push({ indexNo: m[1], afterPos: m.index + m[0].length });
+  const boundaryRe = /(DEGREE|DIPLOMA)(?=\s*\d|\s*$)/g;
+  const boundaries = [];
+  let bm;
+  while ((bm = boundaryRe.exec(text)) !== null) {
+    boundaries.push({ qualification: bm[1], end: bm.index + bm[0].length });
   }
 
   const rows = [];
-  for (let i = 0; i < starts.length; i++) {
-    const { indexNo, afterPos } = starts[i];
-    const end = i + 1 < starts.length ? starts[i + 1].afterPos - 15 : text.length;
-    const rest = text.slice(afterPos, Math.max(end, afterPos));
+  let chunkStart = 0;
 
-    const dobMatch = rest.match(/(\d{4}-\d{2}-\d{2})/);
+  for (const b of boundaries) {
+    const chunk = text.slice(chunkStart, b.end);
+    chunkStart = b.end;
+
+    const content = chunk.slice(0, chunk.length - b.qualification.length).trim();
+
+    const digitRunMatch = content.match(/\d+/);
+    if (!digitRunMatch || digitRunMatch[0].length < 11) continue;
+
+    const indexNo = digitRunMatch[0].slice(-11);
+    const afterDigits = content.slice(digitRunMatch.index + digitRunMatch[0].length);
+
+    const dobMatch = afterDigits.match(/\d{4}-\d{2}-\d{2}/);
     if (!dobMatch) continue;
-    const dob = dobMatch[1];
-    const dobIdx = dobMatch.index;
 
-    const fullName = rest.slice(0, dobIdx).trim();
-    const afterDob = rest.slice(dobIdx + dob.length);
+    const surname = afterDigits.slice(0, dobMatch.index).trim();
+    const course = afterDigits
+      .slice(dobMatch.index + dobMatch[0].length)
+      .trim()
+      .replace(/\s+/g, ' ');
 
-    const degreeIdx = afterDob.lastIndexOf('DEGREE');
-    const diplomaIdx = afterDob.lastIndexOf('DIPLOMA');
-
-    let qualification = '';
-    let qualStart = -1;
-    if (degreeIdx > diplomaIdx) {
-      qualification = 'DEGREE';
-      qualStart = degreeIdx;
-    } else if (diplomaIdx >= 0) {
-      qualification = 'DIPLOMA';
-      qualStart = diplomaIdx;
-    }
-
-    if (!qualification || !fullName) continue;
-
-    const course = afterDob.slice(0, qualStart).trim().replace(/\s+/g, ' ');
-    if (!course) continue;
+    if (!surname || !course) continue;
 
     rows.push({
       index_no: indexNo,
-      surname: fullName,
+      surname,
       other_names: '',
-      date_of_birth: dob,
+      date_of_birth: dobMatch[0],
       course_of_study: course,
-      qualification,
+      qualification: b.qualification,
     });
   }
+
   return rows;
 }
 
