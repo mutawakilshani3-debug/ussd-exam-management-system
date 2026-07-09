@@ -62,6 +62,7 @@ export default function NationalServiceCheck() {
               {result.surname} {result.other_names}
             </div>
             <div style={{ marginTop: 12, fontSize: '0.9rem' }}>
+              <div><strong>Date of Birth:</strong> {result.date_of_birth}</div>
               <div><strong>Course of Study:</strong> {result.course_of_study}</div>
               <div><strong>Qualification:</strong> {result.qualification}</div>
               <div><strong>Service Year:</strong> {result.service_year}</div>
