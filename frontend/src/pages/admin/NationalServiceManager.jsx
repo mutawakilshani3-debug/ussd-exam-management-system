@@ -163,6 +163,7 @@ export default function NationalServiceManager() {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th>S/N</th>
                   <th>Index No.</th>
                   <th>Surname</th>
                   <th>Date of Birth</th>
@@ -171,8 +172,9 @@ export default function NationalServiceManager() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {rows.map((r, idx) => (
                   <tr key={r.id}>
+                    <td>{idx + 1}</td>
                     <td>{r.index_no}</td>
                     <td>{r.surname}</td>
                     <td>{r.date_of_birth}</td>
