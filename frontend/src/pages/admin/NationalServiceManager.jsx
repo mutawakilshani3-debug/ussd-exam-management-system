@@ -165,7 +165,7 @@ export default function NationalServiceManager() {
                 <tr>
                   <th>Index No.</th>
                   <th>Surname</th>
-                  <th>Other Names</th>
+                  <th>Date of Birth</th>
                   <th>Course of Study</th>
                   <th>Qualification</th>
                 </tr>
@@ -175,7 +175,7 @@ export default function NationalServiceManager() {
                   <tr key={r.id}>
                     <td>{r.index_no}</td>
                     <td>{r.surname}</td>
-                    <td>{r.other_names}</td>
+                    <td>{r.date_of_birth}</td>
                     <td>{r.course_of_study}</td>
                     <td>{r.qualification}</td>
                   </tr>
