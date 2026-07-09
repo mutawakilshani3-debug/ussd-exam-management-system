@@ -6,10 +6,6 @@ const TIME_RANGE_RE = /^(\d{1,2}:\d{2}[ap])\s*-\s*(\d{1,2}:\d{2}[ap])$/i;
 const COURSE_CODE_RE = /^([A-Z]{2,4}\s?\d{3})\s*Lec\s*\d+[a-z]?$/i;
 const ROOM_META_RE = /^\(\d+,\s*[\d.]+\)$/;
 
-/**
- * Parses CSV or Excel (.xlsx/.xls) files.
- * Expects a header row: course_code, day, start_time, end_time, venue, lecturer
- */
 function parseSpreadsheet(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheetName = workbook.SheetNames[0];
@@ -34,10 +30,6 @@ function parseSpreadsheet(buffer) {
     .filter((r) => r.course_code && r.day && r.start_time && r.end_time && r.venue);
 }
 
-/**
- * Parses the master UTAS-style PDF timetable (day headers, room blocks,
- * course entries with time ranges and lecturer names).
- */
 async function parsePdf(buffer) {
   const data = await pdfParse(buffer);
   const lines = data.text
@@ -114,43 +106,38 @@ async function parsePdf(buffer) {
 }
 
 /**
- * Parses the National Service class list PDF. Each record sits on its own
- * line but columns are concatenated with NO separating spaces in some spots
- * (e.g. "AMOAKOJESSICA 1998-02-11" or "TIZAAMIME1999-12-11"), so instead of
- * splitting on whitespace this anchors on two reliable fixed patterns: an
- * 11-digit index number starting with "20" (the admission year prefix), and
- * a YYYY-MM-DD date of birth. Everything between them is treated as one
- * combined name field (surname + other names), since there's no reliable
- * separator between the two in the raw extracted text.
+ * Parses the National Service class list PDF.
+ *
+ * The raw text pdf-parse extracts has NO reliable line boundaries: columns
+ * within a record are sometimes concatenated with zero spaces (e.g.
+ * "AMOAKOJESSICA1998-02-11"), and at every page break the repeating
+ * header/footer banner gets glued onto the same line as the next record's
+ * serial number, corrupting that line entirely.
+ *
+ * Instead of matching whole lines, this scans the ENTIRE document as one
+ * continuous stream and anchors on the one pattern that's always reliable:
+ * an 11-digit index number starting with "20" (e.g. 20240212023). Whatever
+ * junk text (serial numbers, page headers/footers) sits before that pattern
+ * is simply skipped over rather than requiring a clean line start, so page
+ * breaks no longer cause records to be dropped.
  */
 async function parseNationalServicePdf(buffer) {
   const data = await pdfParse(buffer);
-  const lines = data.text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const text = data.text.replace(/\r/g, ' ').replace(/\n/g, ' ');
 
-  const LINE_RE = /^(\d+?)(20\d{9})([A-Za-z][A-Za-z\-\s]*?)\s*(\d{4}-\d{2}-\d{2})\s*(.+?)\s*(DEGREE|DIPLOMA)\s*$/;
+  const RECORD_RE = /(20\d{9})([A-Za-z][A-Za-z\-'\s]*?)\s*(\d{4}-\d{2}-\d{2})\s*([A-Za-z0-9.\-\s]*?)\s*(DEGREE|DIPLOMA)/g;
 
   const rows = [];
-  for (const line of lines) {
-    const match = line.match(LINE_RE);
-    if (!match) continue;
-
-    const [, , indexNo, fullName, dob, course, qualification] = match;
-
-    // Best-effort split: surname is the leading all-caps word/run, the rest
-    // (which may include mixed case or additional words) is "other names".
-    const nameParts = fullName.trim().match(/^([A-Z\-]+)\s*(.*)$/);
-    const surname = nameParts ? nameParts[1] : fullName.trim();
-    const otherNames = nameParts ? nameParts[2].trim() : '';
+  let match;
+  while ((match = RECORD_RE.exec(text)) !== null) {
+    const [, indexNo, fullName, dob, course, qualification] = match;
 
     rows.push({
       index_no: indexNo,
-      surname: surname || fullName.trim(),
-      other_names: otherNames,
+      surname: fullName.trim(),
+      other_names: '',
       date_of_birth: dob,
-      course_of_study: course.trim(),
+      course_of_study: course.trim().replace(/\s+/g, ' '),
       qualification,
     });
   }
