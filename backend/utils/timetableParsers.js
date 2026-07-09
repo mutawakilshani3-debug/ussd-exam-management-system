@@ -108,36 +108,70 @@ async function parsePdf(buffer) {
 /**
  * Parses the National Service class list PDF.
  *
- * The raw text pdf-parse extracts has NO reliable line boundaries: columns
- * within a record are sometimes concatenated with zero spaces (e.g.
- * "AMOAKOJESSICA1998-02-11"), and at every page break the repeating
- * header/footer banner gets glued onto the same line as the next record's
- * serial number, corrupting that line entirely.
- *
- * Instead of matching whole lines, this scans the ENTIRE document as one
- * continuous stream and anchors on the one pattern that's always reliable:
- * an 11-digit index number starting with "20" (e.g. 20240212023). Whatever
- * junk text (serial numbers, page headers/footers) sits before that pattern
- * is simply skipped over rather than requiring a clean line start, so page
- * breaks no longer cause records to be dropped.
+ * Approach: find every 11-digit index number ("20" + 9 digits) in the raw
+ * text as a fixed anchor point, then treat everything between one index
+ * number and the next as a single record. Within each record:
+ *   - the date of birth (YYYY-MM-DD) marks where the name ends
+ *   - the qualification is taken as the LAST occurrence of "DEGREE" or
+ *     "DIPLOMA" in the remaining text (not the first) - this matters
+ *     because some course names themselves start with the word "DIPLOMA"
+ *     (e.g. "DIPLOMA IN INFORMATION TECHNOLOGY DIPLOMA"), and naively
+ *     matching the first occurrence would misidentify the course name's
+ *     own leading word as the qualification marker, corrupting that
+ *     record and cascading errors into subsequent ones.
  */
 async function parseNationalServicePdf(buffer) {
   const data = await pdfParse(buffer);
   const text = data.text.replace(/\r/g, ' ').replace(/\n/g, ' ');
 
-  const RECORD_RE = /(20\d{9})([A-Za-z][A-Za-z\-'\s]*?)\s*(\d{4}-\d{2}-\d{2})\s*([A-Za-z0-9.\-\s]*?)\s*(DEGREE|DIPLOMA)/g;
+  const indexRe = /20\d{9}/g;
+  const starts = [];
+  let m;
+  while ((m = indexRe.exec(text)) !== null) {
+    starts.push(m.index);
+  }
 
   const rows = [];
-  let match;
-  while ((match = RECORD_RE.exec(text)) !== null) {
-    const [, indexNo, fullName, dob, course, qualification] = match;
+  for (let i = 0; i < starts.length; i++) {
+    const start = starts[i];
+    const end = i + 1 < starts.length ? starts[i + 1] : text.length;
+    const chunk = text.slice(start, end);
+
+    const indexNo = chunk.slice(0, 11);
+    const rest = chunk.slice(11);
+
+    const dobMatch = rest.match(/(\d{4}-\d{2}-\d{2})/);
+    if (!dobMatch) continue;
+    const dob = dobMatch[1];
+    const dobIdx = dobMatch.index;
+
+    const fullName = rest.slice(0, dobIdx).trim();
+    const afterDob = rest.slice(dobIdx + dob.length);
+
+    const degreeIdx = afterDob.lastIndexOf('DEGREE');
+    const diplomaIdx = afterDob.lastIndexOf('DIPLOMA');
+
+    let qualification = '';
+    let qualStart = -1;
+    if (degreeIdx > diplomaIdx) {
+      qualification = 'DEGREE';
+      qualStart = degreeIdx;
+    } else if (diplomaIdx >= 0) {
+      qualification = 'DIPLOMA';
+      qualStart = diplomaIdx;
+    }
+
+    if (!qualification || !fullName) continue;
+
+    const course = afterDob.slice(0, qualStart).trim().replace(/\s+/g, ' ');
+    if (!course) continue;
 
     rows.push({
       index_no: indexNo,
-      surname: fullName.trim(),
+      surname: fullName,
       other_names: '',
       date_of_birth: dob,
-      course_of_study: course.trim().replace(/\s+/g, ' '),
+      course_of_study: course,
       qualification,
     });
   }
