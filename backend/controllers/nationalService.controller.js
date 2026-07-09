@@ -127,4 +127,23 @@ async function searchByIndex(req, res, next) {
   }
 }
 
-module.exports = { uploadFile, list, removeAll, searchByIndex };
+/**
+ * POST /api/national-service/debug-parse
+ * Admin only. TEMPORARY diagnostic endpoint - returns the raw text pdf-parse
+ * extracts from the uploaded file, so we can see its actual structure and
+ * tune the parsing regex. Remove this route once parsing is confirmed working.
+ */
+async function debugParse(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
+    const pdfParse = require('pdf-parse');
+    const data = await pdfParse(req.file.buffer);
+    res.json({ success: true, textSample: data.text.slice(0, 3000) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { uploadFile, list, removeAll, searchByIndex, debugParse };
