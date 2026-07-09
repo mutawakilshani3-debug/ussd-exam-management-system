@@ -108,47 +108,62 @@ async function parsePdf(buffer) {
 /**
  * Parses the National Service class list PDF.
  *
- * Strategy: find record BOUNDARIES rather than record starts. Every
- * qualification word ("DEGREE"/"DIPLOMA") that is immediately followed by
- * the next record's leading digits (or sits at the very end of the
- * document) marks the true end of a record. This correctly ignores
- * "DIPLOMA" when it's merely the first word of a course name (e.g.
- * "DIPLOMA IN INFORMATION TECHNOLOGY DIPLOMA") since that occurrence is
- * followed by more letters, not digits.
+ * Strategy: find every record's STARTING position first (a run of 11+
+ * digits - serial number concatenated with the fixed 11-digit index number
+ * - always the most reliable anchor). Then, for each record, take the LAST
+ * qualifier word ("DEGREE"/"DIPLOMA") that appears before the *next*
+ * record's digit run begins.
  *
- * Within each resulting chunk, the leading run of digits (serial number +
- * 11-digit index number, concatenated with no separator in the raw
- * extracted text) is located anywhere in the chunk - not anchored to the
- * very start - so any stray page header/footer text glued onto the front
- * of a record is simply discarded rather than causing the whole record to
- * be skipped. The index number is always the LAST 11 digits of that run,
- * which works regardless of how many digits the serial number itself has
- * or what it starts with (avoiding the earlier bug where serials starting
- * with "20" were confused for the index number's own prefix).
+ * This handles two real problems seen in this document:
+ *  1) Page-break junk (repeating header/footer banners) sometimes sits
+ *     between one record's qualifier and the next record's digits. Since
+ *     each record's slice starts exactly at its own digit run, any such
+ *     junk automatically falls outside both records and is discarded.
+ *  2) Some course names themselves start with "DIPLOMA" (e.g. "DIPLOMA IN
+ *     INFORMATION TECHNOLOGY DIPLOMA", "DIPLOMA LABORATORY TECHNOLOGY
+ *     DIPLOMA"). Taking the LAST qualifier before the next record start
+ *     correctly selects the true trailing qualifier rather than the
+ *     course name's leading word.
  */
 async function parseNationalServicePdf(buffer) {
   const data = await pdfParse(buffer);
   let text = data.text.replace(/\r/g, ' ').replace(/\n/g, ' ');
   text = text.replace(/\s+/g, ' ');
 
-  const boundaryRe = /(DEGREE|DIPLOMA)(?=\s*\d|\s*$)/g;
-  const boundaries = [];
-  let bm;
-  while ((bm = boundaryRe.exec(text)) !== null) {
-    boundaries.push({ qualification: bm[1], end: bm.index + bm[0].length });
+  const digitRunRe = /\d{11,}/g;
+  const recordStarts = [];
+  let dm;
+  while ((dm = digitRunRe.exec(text)) !== null) {
+    recordStarts.push(dm.index);
+  }
+
+  const qualRe = /(DEGREE|DIPLOMA)/g;
+  const qualMatches = [];
+  let qm;
+  while ((qm = qualRe.exec(text)) !== null) {
+    qualMatches.push({ word: qm[1], end: qm.index + qm[1].length });
   }
 
   const rows = [];
-  let chunkStart = 0;
 
-  for (const b of boundaries) {
-    const chunk = text.slice(chunkStart, b.end);
-    chunkStart = b.end;
+  for (let i = 0; i < recordStarts.length; i++) {
+    const start = recordStarts[i];
+    const nextStart = i + 1 < recordStarts.length ? recordStarts[i + 1] : text.length;
 
-    const content = chunk.slice(0, chunk.length - b.qualification.length).trim();
+    let boundary = null;
+    for (let j = qualMatches.length - 1; j >= 0; j--) {
+      if (qualMatches[j].end <= nextStart && qualMatches[j].end > start) {
+        boundary = qualMatches[j];
+        break;
+      }
+    }
+    if (!boundary) continue;
 
-    const digitRunMatch = content.match(/\d+/);
-    if (!digitRunMatch || digitRunMatch[0].length < 11) continue;
+    const chunk = text.slice(start, boundary.end);
+    const content = chunk.slice(0, chunk.length - boundary.word.length).trim();
+
+    const digitRunMatch = content.match(/\d{11,}/);
+    if (!digitRunMatch) continue;
 
     const indexNo = digitRunMatch[0].slice(-11);
     const afterDigits = content.slice(digitRunMatch.index + digitRunMatch[0].length);
@@ -170,7 +185,7 @@ async function parseNationalServicePdf(buffer) {
       other_names: '',
       date_of_birth: dobMatch[0],
       course_of_study: course,
-      qualification: b.qualification,
+      qualification: boundary.word,
     });
   }
 
