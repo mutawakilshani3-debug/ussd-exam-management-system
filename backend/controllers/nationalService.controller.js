@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const { parseSpreadsheet, parseNationalServicePdf } = require('../utils/timetableParsers');
 const path = require('path');
+const notifyAllStudents = require('../utils/notifyStudents');
 
 /**
  * POST /api/national-service/upload
@@ -68,6 +69,10 @@ async function uploadFile(req, res, next) {
     } finally {
       conn.release();
     }
+
+    notifyAllStudents(
+      'MUTA: National Service posting records have been uploaded. Check your status now using "Check your National Service details" on the sign-in page.'
+    ).catch((err) => console.error('National service notify failed:', err.message));
 
     res.json({ success: true, message: `Imported ${rows.length} record(s) from ${req.file.originalname}.` });
   } catch (err) {
