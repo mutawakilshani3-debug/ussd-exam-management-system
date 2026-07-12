@@ -194,7 +194,7 @@ async function logout(req, res, next) {
 async function forgotPassword(req, res, next) {
   try {
     const { email } = req.body;
-    const [rows] = await pool.query('SELECT id, full_name FROM users WHERE email = ? LIMIT 1', [email]);
+    const [rows] = await pool.query('SELECT id, full_name, phone FROM users WHERE email = ? LIMIT 1', [email]);
 
     if (rows.length === 0) {
       return res.json({ success: true, message: 'If that email exists, a reset link has been sent.' });
@@ -216,6 +216,13 @@ async function forgotPassword(req, res, next) {
       subject: 'Password Reset Request',
       html: `<p>Hello ${user.full_name},</p><p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p>`,
     });
+
+    if (user.phone) {
+      sendSms(
+        user.phone,
+        `MUTA: A password reset was requested for your account. Check your email for the reset link. If this wasn't you, ignore this message.`
+      ).catch((err) => console.error('Password reset SMS failed:', err.message));
+    }
 
     res.json({ success: true, message: 'If that email exists, a reset link has been sent.' });
   } catch (err) {
