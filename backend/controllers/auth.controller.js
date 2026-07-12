@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { pool } = require('../config/db');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
+const sendSms = require('../utils/sendSms');
 const logActivity = require('../utils/logActivity');
 
 const PASSWORD_MIN_LENGTH = 8;
@@ -72,6 +73,12 @@ async function register(req, res, next) {
     );
 
     await logActivity(result.insertId, 'REGISTER', 'Student self-registered', req);
+
+    // Fire-and-forget welcome SMS - don't block or fail registration if SMS fails
+    sendSms(
+      phone,
+      `Welcome to MUTA, ${fullName.split(' ')[0]}! Your account has been created successfully. Sign in anytime to check your exam timetable.`
+    ).catch((err) => console.error('Welcome SMS failed:', err.message));
 
     const accessToken = generateAccessToken(result.insertId, 'student');
     const refreshToken = await issueRefreshToken(result.insertId);
