@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const { parseSpreadsheet, parsePdf } = require('../utils/timetableParsers');
 const path = require('path');
+const notifyAllStudents = require('../utils/notifyStudents');
 
 const DAY_ORDER = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6, Sunday: 7 };
 
@@ -253,6 +254,10 @@ async function uploadFile(req, res, next) {
     } finally {
       conn.release();
     }
+
+    notifyAllStudents(
+      'MUTA: A new school timetable has been uploaded. Check "Build My Timetable" in the app for your updated schedule.'
+    ).catch((err) => console.error('Timetable notify failed:', err.message));
 
     res.json({ success: true, message: `Imported ${rows.length} row(s) from ${req.file.originalname}.` });
   } catch (err) {
